@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 12px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+/*
+.rect {
+  fill: red;
+}
+*/
+.rect:hover {
+  fill: blue ;
+}
+
+
+/*
+.x.axis path {
+  display: none;
+}
+*/
+.left{
+float:left;
+width:50%;
+overflow:hidden;
+}
+.tooltip {
+  position: absolute;
+  width: 200px;
+  height: 28px;
+  pointer-events: none;
+}
+
+.right{
+float:left;
+width:50%;
+overflow:hidden;
+}
+.tooltip {
+  position: absolute;
+  width: 200px;
+  height: 28px;
+  pointer-events:  none;
+}
+.point {
+  fill: #999;
+  stroke: #fff;
+}
+
+.point.selected {
+  fill: red;
+  fill-opacity: 1;
+  stroke: brown;
+}
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+button {
+  position: absolute;
+  right: 30px;
+  top: 30px;
+}
+
+</style>
+<body onload=chart()>
+<input type="button" value="home" id="btn1">
+
+<div style="width:1600px;height:1000px">
+<div id='bar' class="left">
+</div>
+<div id='scatter' class="right">
+</div>
+</div>
+
+
+
+<script src="d3.js"></script>
+<script src="d3.min.js"></script>
+<script src="d3_tip.js"></script>
+<script>
+
+var newValue = [];
+
+
+document.getElementById('btn1').onclick = function() {
+	location.href = "file:///C:/project-folder/oct26/welcome.html";
+	}
+
+   
+
+	function chart(){
+	document.getElementById("bar").innerHTML="";
+	document.getElementById("scatter").innerHTML="";
+	 var margin = { top: 30, right: 20, bottom: 30, left: 40 },
+        width = 760 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .5);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+
+
+    var tip = d3.tip()
+      .attr('class', 'd3-tip')
+      .offset([-5, 0])
+      .html(function (d) {
+          return "<strong>TeamName:</strong> <span style='color:red'>" + d.teamname + "</span>" + "<strong>Played:</strong> <span style='color:red'>" + d.played + "</span>" + "</span>" + "<strong>Points:</strong> <span style='color:red'>" + d.points + "</span>" ;
+      })
+	
+	 var svg = d3.select("#bar").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.call(tip);
+
+    d3.csv("foot.csv", type, function (error, data) {
+        x.domain(data.map(function (d) { return d.teamname; }));
+        y.domain([0, d3.max(data, function (d) { return d.played; })]);
+
+
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+      	    .append("text")
+		.attr("class", "label")
+            .attr("x", width+170)
+            .attr("dx", ".71em")
+          .attr("y", -15)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Teamname")
+          .attr('fill', 'darkgreen');
+
+
+        svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis)
+          .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Played")
+          .attr('fill', 'darkgreen');
+
+
+var tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+
+        svg.selectAll(".rect")
+        .data(data)
+      .enter()
+	  .append("rect")
+        .attr("class", "rect")
+        .attr("x", function (d) { return x(d.teamname); })
+        .attr("width", x.rangeBand())
+        .attr("y", function (d) { return y(d.played); })
+        .attr("height", function (d) { return height - y(d.played); })
+		
+		///////////
+		.style("fill", function (d) {
+		//alert(d["Value"]);
+		//alert(newValue[0]);
+                if (newValue.length > 0) {
+                    for (var i = 0; i < newValue.length; i++) {
+                        if (d["Value"] == newValue[i]) {
+                            return "blue";
+                        }
+                        else {
+                            return "red";
+                        }
+                    }
+
+                }
+                else {
+                    return "red";
+                }
+
+
+            })
+		
+		///////////
+		
+        .on('mouseover', tip.show)
+        .on('mouseout', tip.hide)
+/*		
+	.on('mousedown', function(d) {
+		tooltip.transition()
+              		 .duration(200)
+               		.style("opacity", 10.5);
+			tooltip.html("played--"+d.played+","+"points--"+d.points)
+			.style("left", (d3.event.pageX + 5) + "px")
+               		.style("top", (d3.event.pageY - 28) + "px");
+      			})
+*/	
+				.on('mousedown', tip.hide)
+	.on('mouseup', function(d) {
+		newValue = [];
+		newValue.push(d["Value"]);
+		chart();
+		
+			d3.select(this)
+			  .attr('fill', 'yellow');
+
+      			})
+
+
+    });
+
+    function type(d) {
+        d.played = +d.played;
+        return d;
+    }
+
+
+    function type(d) {
+        d.points = +d.points;
+        return d;
+    }
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	//scatter
+	
+	var margin = {top: 20, right: 20, bottom: 40, left: 50},
+    width = 600 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+	var w = 600;
+	var h = 500;
+	
+	
+
+
+	
+// setup x 
+var xValue = function(d) { 
+		return d.points;}, // data -> value
+    xScale = d3.scale.linear()
+		.range([0, width]), // value -> display
+    xMap = function(d) { 
+		return xScale(xValue(d));}, // data -> display
+    xAxis1 = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom");
+
+// setup y
+var yValue = function(d) { return d["played"];}, // data -> value
+    yScale = d3.scale.linear().range([height, 0]), // value -> display
+    yMap = function(d) { return yScale(yValue(d));}, // data -> display
+    yAxis1 = d3.svg.axis()
+		.scale(yScale)
+		.orient("left");
+
+
+// add the graph canvas to the body of the webpage
+var svg1 = d3.select("#scatter").append("svg")
+	.attr("width", w)
+	.attr("height", h)
+  	.append("g")
+  	  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+ 
+
+// tooltip
+var tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+// reading the data from a csv file
+d3.csv("foot.csv", function(error, data) {
+defaultExtent = [[100, 100], [100, 100]];
+
+var quadtree = d3.geom.quadtree()
+    .extent([[-1, -1], [width + 1, height + 1]])
+    (data);
+	
+//setting the domian values
+ xScale.domain([0, d3.max(data, xValue)]);
+ yScale.domain([0, d3.max(data, yValue)]);
+
+ var brush = d3.svg.brush()
+    .x(xScale)
+    .y(yScale)
+	.extent(defaultExtent)
+    //.on("brush", brushed)
+    //.on("brushend", brushended);
+
+
+  // x-axis
+  svg1.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis1)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("played");
+
+  // y-axis
+  svg1.append("g")
+      .attr("class", "y axis")
+      .call(yAxis1)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("points");
+
+  // draw dots
+  svg1.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", xMap)
+      .attr("cy", yMap)
+	.style("fill", function (d) {
+
+                if (newValue.length > 0) {
+                    for (var i = 0; i < newValue.length; i++) {
+                        if (d["Value"] == newValue[i]) {
+                            return "blue";
+                        }
+                        else {
+                            return "red";
+                        }
+                    }
+
+                }
+                else {
+                    return "red";
+                }
+
+
+            })
+
+.on("mouseover", function(d) {
+          tooltip.transition()
+               .duration(100)
+               .style("opacity", 2);
+		tooltip.html("TeamName--"+d.teamname+"<br/>"+"played--"+d.played+"<br/>"+"points--"+d.points)
+		.style("font-family", "sans-serif")
+	        .style("font-size", "15px")
+               .style("left", (d3.event.pageX + 5) + "px")
+               .style("top", (d3.event.pageY - 30) + "px")
+
+		d3.select(this)
+	    	.style('fill', 'red');
+	//document.getElementById("scatter").innerHTML="";
+	//chart();
+      })
+
+.on("mouseout", function(d) {
+	tooltip.transition()
+	.style("opacity",0)
+		d3.select(this)
+	    	.style('fill', 'blue');
+      })
+
+.on('mouseup', function(d) {
+		tooltip.transition()
+		.style("opacity",0)
+
+		newValue = [];
+		newValue.push(d["Value"]);
+		chart();
+		
+
+			  
+
+      			})
+
+				
+svg1.append("g")
+    .attr("class", "brush")
+    .call(brush)
+    .call(brush.event);
+	//brush(svg);
+
+	
+
+});
+
+}
+   
+
+</script>
+</body>
